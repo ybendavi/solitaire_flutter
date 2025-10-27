@@ -1,0 +1,11 @@
+{
+    "recommendations": [
+        "dart-code.flutter",
+        "dart-code.dart-code",
+        "ms-vscode.vscode-json",
+        "bradlc.vscode-tailwindcss",
+        "usernamehw.errorlens",
+        "streetsidesoftware.code-spell-checker",
+        "esbenp.prettier-vscode"
+    ]
+}

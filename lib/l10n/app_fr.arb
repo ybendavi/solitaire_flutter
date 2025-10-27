@@ -1,0 +1,128 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Solitaire Klondike",
+  "newGame": "Nouvelle partie",
+  "continueGame": "Continuer",
+  "statistics": "Statistiques",
+  "settings": "Paramètres",
+  "about": "À propos",
+  "moves": "Coups",
+  "time": "Temps",
+  "score": "Score",
+  "undo": "Annuler",
+  "redo": "Refaire",
+  "hint": "Indice",
+  "noHintAvailable": "Aucun indice disponible",
+  
+  "statsTitle": "Statistiques",
+  "refresh": "Actualiser",
+  "statsError": "Impossible de charger les statistiques",
+  "retry": "Réessayer",
+  "filters": "Filtres",
+  "filterPeriod": "Période",
+  "filterRangeToday": "Aujourd'hui",
+  "filterRange7Days": "7 jours",
+  "filterRange30Days": "30 jours",
+  "filterRangeAll": "Tout",
+  "filterDrawMode": "Mode de pioche",
+  "filterDrawModeAll": "Tous",
+  "filterDrawMode1Card": "1 carte",
+  "filterDrawMode3Cards": "3 cartes",
+  
+  "winRate": "Taux de victoire",
+  "gamesPlayed": "Parties jouées",
+  "gamesWon": "Parties gagnées",
+  "bestTime": "Meilleur temps",
+  "avgTime": "Temps moyen",
+  "avgMoves": "Coups moyens",
+  "vegasBankroll": "Banque Vegas",
+  "currentStreak": "Série actuelle",
+  "bestStreak": "Meilleure série",
+  
+  "trend7Days": "Tendance 7 jours",
+  "trend30Days": "Tendance 30 jours",
+  "recentGames": "Parties récentes",
+  "gameWon": "Gagnée",
+  "gameLost": "Perdue",
+  
+  "winRateSemantics": "Taux de victoire : {rate} pour cent",
+  "@winRateSemantics": {
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesPlayedSemantics": "Parties jouées : {count}",
+  "@gamesPlayedSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesWonSemantics": "Parties gagnées : {count}",
+  "@gamesWonSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestTimeSemantics": "Meilleur temps : {time}",
+  "@bestTimeSemantics": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "avgTimeSemantics": "Temps moyen : {time}",
+  "@avgTimeSemantics": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "avgMovesSemantics": "Coups moyens : {moves}",
+  "@avgMovesSemantics": {
+    "placeholders": {
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "vegasBankrollSemantics": "Banque Vegas : {amount} dollars",
+  "@vegasBankrollSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "currentStreakSemantics": "Série de victoires actuelle : {streak}",
+  "@currentStreakSemantics": {
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "bestStreakSemantics": "Meilleure série de victoires : {streak}",
+  "@bestStreakSemantics": {
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+
+  "victoryTitle": "Victoire !",
+  "victoryAnnounce": "Partie gagnée",
+  "replayButton": "Rejouer",
+  "backToMenuButton": "Retour au menu",
+  "labelTime": "Temps",
+  "labelMoves": "Coups",
+  "labelScore": "Score"
+}

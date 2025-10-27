@@ -1,0 +1,24 @@
+{
+    "dart.flutterSdkPath": null,
+    "dart.runPubGetOnPubspecChanges": "always",
+    "dart.openDevTools": "flutter",
+    "dart.previewFlutterUiGuides": true,
+    "dart.previewFlutterUiGuidesCustomTracking": true,
+    "dart.hotReloadOnSave": "all",
+    "dart.showInspectorNotificationsForWidgetErrors": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": false,
+    "editor.rulers": [
+        80
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+    },
+    "files.associations": {
+        "*.dart": "dart"
+    },
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+        "*.dart": "${capture}.g.dart,${capture}.freezed.dart"
+    }
+}

@@ -1,0 +1,128 @@
+{
+  "@@locale": "en",
+  "appTitle": "Solitaire Klondike",
+  "newGame": "New Game",
+  "continueGame": "Continue",
+  "statistics": "Statistics",
+  "settings": "Settings",
+  "about": "About",
+  "moves": "Moves",
+  "time": "Time",
+  "score": "Score",
+  "undo": "Undo",
+  "redo": "Redo",
+  "hint": "Hint",
+  "noHintAvailable": "No hint available",
+  
+  "statsTitle": "Statistics",
+  "refresh": "Refresh",
+  "statsError": "Unable to load statistics",
+  "retry": "Retry",
+  "filters": "Filters",
+  "filterPeriod": "Period",
+  "filterRangeToday": "Today",
+  "filterRange7Days": "7 Days",
+  "filterRange30Days": "30 Days",
+  "filterRangeAll": "All Time",
+  "filterDrawMode": "Draw Mode",
+  "filterDrawModeAll": "All",
+  "filterDrawMode1Card": "1 Card",
+  "filterDrawMode3Cards": "3 Cards",
+  
+  "winRate": "Win Rate",
+  "gamesPlayed": "Games Played",
+  "gamesWon": "Games Won",
+  "bestTime": "Best Time",
+  "avgTime": "Avg Time",
+  "avgMoves": "Avg Moves",
+  "vegasBankroll": "Vegas Bank",
+  "currentStreak": "Current Streak",
+  "bestStreak": "Best Streak",
+  
+  "trend7Days": "7-Day Trend",
+  "trend30Days": "30-Day Trend",
+  "recentGames": "Recent Games",
+  "gameWon": "Won",
+  "gameLost": "Lost",
+  
+  "winRateSemantics": "Win rate: {rate} percent",
+  "@winRateSemantics": {
+    "placeholders": {
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesPlayedSemantics": "Games played: {count}",
+  "@gamesPlayedSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesWonSemantics": "Games won: {count}",
+  "@gamesWonSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bestTimeSemantics": "Best time: {time}",
+  "@bestTimeSemantics": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "avgTimeSemantics": "Average time: {time}",
+  "@avgTimeSemantics": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "avgMovesSemantics": "Average moves: {moves}",
+  "@avgMovesSemantics": {
+    "placeholders": {
+      "moves": {
+        "type": "int"
+      }
+    }
+  },
+  "vegasBankrollSemantics": "Vegas bankroll: {amount} dollars",
+  "@vegasBankrollSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "currentStreakSemantics": "Current win streak: {streak}",
+  "@currentStreakSemantics": {
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "bestStreakSemantics": "Best win streak: {streak}",
+  "@bestStreakSemantics": {
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+
+  "victoryTitle": "Victory!",
+  "victoryAnnounce": "Game won",
+  "replayButton": "Play Again",
+  "backToMenuButton": "Back to Menu",
+  "labelTime": "Time",
+  "labelMoves": "Moves",
+  "labelScore": "Score"
+}
