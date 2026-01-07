@@ -911,6 +911,43 @@ class GameController extends StateNotifier<GameState> {
     return true;
   }
 
+  /// Annule plusieurs mouvements d'un coup (pour appui long)
+  /// Retourne le nombre de mouvements annulés
+  int undoMultiple(int count) {
+    var undoneCount = 0;
+    final maxUndo = count.clamp(0, state.moveHistory.length);
+
+    if (maxUndo == 0) return 0;
+
+    // Optimisation : reconstruire directement avec moins de mouvements
+    final movesToKeep = state.moveHistory.length - maxUndo;
+    if (movesToKeep < 0) return 0;
+
+    final movesToReplay = state.moveHistory.sublist(0, movesToKeep);
+    final movesToUndo = state.moveHistory.sublist(movesToKeep);
+
+    // Recommencer la partie
+    final initialState = _dealer.deal(state.seed, state.drawMode);
+
+    // Rejouer uniquement les mouvements à garder
+    var newState = initialState;
+    for (final move in movesToReplay) {
+      newState = _applyMove(move, newState);
+      final points = _scorer.calculateMoveScore(move, newState);
+      newState = newState.addScore(points);
+    }
+
+    // Mettre à jour l'historique avec les mouvements annulés dans redo
+    state = newState.copyWith(
+      moveHistory: movesToReplay,
+      redoHistory: [...state.redoHistory, ...movesToUndo.reversed],
+    );
+
+    undoneCount = movesToUndo.length;
+    debugLog('Undo multiple: $undoneCount mouvements annulés');
+    return undoneCount;
+  }
+
   /// Refait le dernier mouvement annulé
   bool redo() {
     if (!state.canRedo) return false;
@@ -956,6 +993,76 @@ class GameController extends StateNotifier<GameState> {
     }
 
     return moveCount;
+  }
+
+  /// Vérifie si l'auto-complete est disponible
+  /// Conditions: stock vide, waste vide, toutes les cartes du tableau face visible
+  bool canAutoComplete() {
+    // Stock et waste doivent être vides
+    if (state.stock.isNotEmpty || state.waste.isNotEmpty) {
+      return false;
+    }
+
+    // Toutes les cartes du tableau doivent être face visible
+    for (final pile in state.tableau) {
+      for (final card in pile.cards) {
+        if (!card.faceUp) {
+          return false;
+        }
+      }
+    }
+
+    // Il doit rester des cartes à déplacer vers les fondations
+    final cardsInTableau = state.tableau.fold<int>(
+      0,
+      (sum, pile) => sum + pile.cards.length,
+    );
+
+    return cardsInTableau > 0;
+  }
+
+  /// Auto-complete la partie en déplaçant toutes les cartes vers les fondations
+  /// Retourne le nombre de cartes déplacées
+  Future<int> autoCompleteGame() async {
+    if (!canAutoComplete()) return 0;
+
+    var movedCount = 0;
+    var madeProgress = true;
+
+    // Continuer tant qu'on peut faire des progrès
+    while (madeProgress && !state.gameOver) {
+      madeProgress = false;
+
+      // Essayer de déplacer chaque carte du tableau vers une fondation
+      for (var tableauIndex = 0; tableauIndex < state.tableau.length; tableauIndex++) {
+        final pile = state.tableau[tableauIndex];
+        if (pile.isEmpty) continue;
+
+        final topCard = pile.topCard!;
+
+        // Chercher une fondation qui accepte cette carte
+        for (var foundationIndex = 0; foundationIndex < state.foundations.length; foundationIndex++) {
+          final move = Move.tableauToFoundation(
+            tableauIndex: tableauIndex,
+            foundationIndex: foundationIndex,
+            card: topCard,
+          );
+
+          if (_rules.isMoveLegal(move, state)) {
+            if (makeMove(move)) {
+              movedCount++;
+              madeProgress = true;
+              break; // Passer à la prochaine carte
+            }
+          }
+        }
+
+        if (madeProgress) break; // Recommencer depuis le début
+      }
+    }
+
+    debugLog('Auto-complete: $movedCount cartes déplacées');
+    return movedCount;
   }
 
   /// Gère le tap sur une carte (auto-move ou sélection)

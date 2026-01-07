@@ -42,14 +42,20 @@ Ameliorer l'application pour une cible senior avec des features de confort, acce
 
 ---
 
-## Phase 2 : Confort & Anti-frustration (A FAIRE)
+## Phase 2 : Confort & Anti-frustration (IMPLEMENTE)
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Undo illimite | Existant | Deja implemente |
-| Undo multiple | A faire | Appui long = annuler x5 |
-| Sauvegarde auto | Existant | Deja implemente |
-| Auto-complete fin | A faire | Finir automatiquement quand gagne |
+| Undo illimite | OK | Bouton Undo dans AppBar |
+| Undo multiple | OK | Appui long = annuler x5 |
+| Sauvegarde auto | OK | Existant |
+| Auto-complete fin | OK | Bouton >> quand toutes cartes visibles |
+
+### Details implementation
+- **Bouton Undo**: Icone fleche dans AppBar, grise si rien a annuler
+- **Appui long**: Annule 5 coups d'un coup avec feedback "Undo x5"
+- **Auto-complete**: Bouton >> apparait quand stock/waste vides ET toutes cartes face visible
+- **Methodes ajoutees**: `undoMultiple(int)`, `canAutoComplete()`, `autoCompleteGame()`
 
 ---
 

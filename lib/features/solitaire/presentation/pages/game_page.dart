@@ -178,6 +178,78 @@ class _GamePageState extends ConsumerState<GamePage> {
         ),
       ),
       actions: [
+        // Bouton Undo - tap = 1, appui long = 5
+        GestureDetector(
+          onTap: gameState.canUndo
+              ? () {
+                  if (gameController.undo()) {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Undo'),
+                        duration: Duration(milliseconds: 500),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              : null,
+          onLongPress: gameState.canUndo
+              ? () {
+                  final count = gameController.undoMultiple(5);
+                  if (count > 0) {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Undo x$count'),
+                        duration: const Duration(milliseconds: 800),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Icon(
+              Icons.undo,
+              size: responsive.responsive<double>(
+                phone: 22,
+                tablet: 26,
+                desktop: 30,
+              ),
+              color: gameState.canUndo ? Colors.white : Colors.white38,
+            ),
+          ),
+        ),
+
+        // Bouton Auto-complete (visible seulement quand disponible)
+        if (gameController.canAutoComplete())
+          IconButton(
+            icon: Icon(
+              Icons.fast_forward,
+              size: responsive.responsive<double>(
+                phone: 22,
+                tablet: 26,
+                desktop: 30,
+              ),
+            ),
+            tooltip: 'Auto-complete',
+            onPressed: () async {
+              final count = await gameController.autoCompleteGame();
+              if (count > 0 && mounted) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$count cards moved'),
+                    duration: const Duration(milliseconds: 800),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
+
         IconButton(
           icon: Icon(
             Icons.bug_report,
