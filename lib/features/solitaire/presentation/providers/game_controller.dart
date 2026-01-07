@@ -886,66 +886,97 @@ class GameController extends StateNotifier<GameState> {
   bool undo() {
     if (!state.canUndo) return false;
 
-    // Pour simplifier, on implémente l'undo en reconstituant l'état
-    // depuis le début avec tous les mouvements sauf le dernier
-    final movesToReplay =
-        state.moveHistory.sublist(0, state.moveHistory.length - 1);
+    // Sauvegarder le temps actuel pour le préserver
+    final currentTime = state.time;
+
+    // Filtrer les mouvements flipTableauCard car ils sont générés automatiquement
+    final allMoves = state.moveHistory;
+
+    // Trouver le dernier mouvement "réel" (non-flip) à annuler
+    var lastRealMoveIndex = allMoves.length - 1;
+    while (lastRealMoveIndex >= 0 &&
+           allMoves[lastRealMoveIndex].type == MoveType.flipTableauCard) {
+      lastRealMoveIndex--;
+    }
+
+    if (lastRealMoveIndex < 0) return false;
+
+    // Garder seulement les mouvements jusqu'avant le dernier mouvement réel
+    // et ses flips associés
+    final movesToReplay = <Move>[];
+    for (var i = 0; i < lastRealMoveIndex; i++) {
+      // Ignorer les flipTableauCard car ils seront régénérés automatiquement
+      if (allMoves[i].type != MoveType.flipTableauCard) {
+        movesToReplay.add(allMoves[i]);
+      }
+    }
 
     // Recommencer la partie
     final initialState = _dealer.deal(state.seed, state.drawMode);
 
-    // Rejouer tous les mouvements sauf le dernier
+    // Rejouer tous les mouvements (sans les flips, ils seront auto-générés)
     var newState = initialState;
     for (final move in movesToReplay) {
       newState = _applyMove(move, newState);
       final points = _scorer.calculateMoveScore(move, newState);
-      newState = newState.addScore(points);
+      newState = newState.addMoveToHistory(move).addScore(points);
+      // Auto-flip après chaque mouvement comme dans makeMove()
+      newState = _autoFlipTableauCards(newState);
     }
 
-    // Mettre à jour l'historique
+    // Restaurer le temps et vider le redo
     state = newState.copyWith(
-      moveHistory: movesToReplay,
-      redoHistory: [...state.redoHistory, state.moveHistory.last],
+      time: currentTime,
+      redoHistory: [], // Simplifier: vider le redo pour éviter les incohérences
     );
 
     return true;
   }
 
   /// Annule plusieurs mouvements d'un coup (pour appui long)
-  /// Retourne le nombre de mouvements annulés
+  /// Retourne le nombre de mouvements annulés (mouvements "réels", pas les flips)
   int undoMultiple(int count) {
-    var undoneCount = 0;
-    final maxUndo = count.clamp(0, state.moveHistory.length);
+    if (!state.canUndo || count <= 0) return 0;
 
-    if (maxUndo == 0) return 0;
+    // Sauvegarder le temps actuel
+    final currentTime = state.time;
 
-    // Optimisation : reconstruire directement avec moins de mouvements
-    final movesToKeep = state.moveHistory.length - maxUndo;
-    if (movesToKeep < 0) return 0;
+    // Filtrer pour obtenir seulement les mouvements "réels" (non-flip)
+    final allMoves = state.moveHistory;
+    final realMoves = allMoves
+        .where((m) => m.type != MoveType.flipTableauCard)
+        .toList();
 
-    final movesToReplay = state.moveHistory.sublist(0, movesToKeep);
-    final movesToUndo = state.moveHistory.sublist(movesToKeep);
+    if (realMoves.isEmpty) return 0;
+
+    // Nombre de mouvements réels à annuler
+    final realMovesToUndo = count.clamp(0, realMoves.length);
+    final realMovesToKeep = realMoves.length - realMovesToUndo;
+
+    // Garder seulement les premiers mouvements réels
+    final movesToReplay = realMoves.sublist(0, realMovesToKeep);
 
     // Recommencer la partie
     final initialState = _dealer.deal(state.seed, state.drawMode);
 
-    // Rejouer uniquement les mouvements à garder
+    // Rejouer les mouvements à garder
     var newState = initialState;
     for (final move in movesToReplay) {
       newState = _applyMove(move, newState);
       final points = _scorer.calculateMoveScore(move, newState);
-      newState = newState.addScore(points);
+      newState = newState.addMoveToHistory(move).addScore(points);
+      // Auto-flip après chaque mouvement
+      newState = _autoFlipTableauCards(newState);
     }
 
-    // Mettre à jour l'historique avec les mouvements annulés dans redo
+    // Restaurer le temps
     state = newState.copyWith(
-      moveHistory: movesToReplay,
-      redoHistory: [...state.redoHistory, ...movesToUndo.reversed],
+      time: currentTime,
+      redoHistory: [], // Vider le redo pour éviter les incohérences
     );
 
-    undoneCount = movesToUndo.length;
-    debugLog('Undo multiple: $undoneCount mouvements annulés');
-    return undoneCount;
+    debugLog('Undo multiple: $realMovesToUndo mouvements annulés');
+    return realMovesToUndo;
   }
 
   /// Refait le dernier mouvement annulé
