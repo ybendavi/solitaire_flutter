@@ -976,6 +976,95 @@ class GameController extends StateNotifier<GameState> {
     return false;
   }
 
+  /// Tap-to-move intelligent pour seniors : déplace uniquement si UN seul coup valide
+  /// Retourne (success, message) - message peut être null ou une explication du coup
+  (bool, String?) tapToMoveCard(Card card, {required String source, int? sourceIndex}) {
+    final validMoves = _getValidMovesForCard(card, source, sourceIndex);
+
+    if (validMoves.isEmpty) {
+      return (false, null);
+    }
+
+    if (validMoves.length == 1) {
+      final move = validMoves.first;
+      final success = makeMove(move);
+      if (success) {
+        final description = _getMoveDescription(move);
+        return (true, description);
+      }
+      return (false, null);
+    }
+
+    // Plus d'un coup possible : ne rien faire (l'utilisateur doit choisir)
+    return (false, 'Multiple moves possible');
+  }
+
+  /// Trouve tous les coups valides pour une carte donnée
+  List<Move> _getValidMovesForCard(Card card, String source, int? sourceIndex) {
+    final moves = <Move>[];
+
+    // Vérifie les fondations
+    for (var i = 0; i < state.foundations.length; i++) {
+      Move? move;
+      if (source == 'waste') {
+        move = Move.wasteToFoundation(foundationIndex: i, card: card);
+      } else if (source == 'tableau' && sourceIndex != null) {
+        move = Move.tableauToFoundation(
+          tableauIndex: sourceIndex,
+          foundationIndex: i,
+          card: card,
+        );
+      }
+      if (move != null && _rules.isMoveLegal(move, state)) {
+        moves.add(move);
+      }
+    }
+
+    // Vérifie le tableau
+    for (var i = 0; i < state.tableau.length; i++) {
+      Move? move;
+      if (source == 'waste') {
+        move = Move.wasteToTableau(card: card, tableauIndex: i);
+      } else if (source == 'tableau' && sourceIndex != null) {
+        // Tableau vers tableau - récupère les cartes à déplacer
+        final cardsToMove = _getCardsToMoveFromTableau(sourceIndex, card);
+        if (cardsToMove.isNotEmpty && i != sourceIndex) {
+          move = Move.tableauToTableau(
+            fromIndex: sourceIndex,
+            toIndex: i,
+            cards: cardsToMove,
+          );
+        }
+      } else if (source == 'foundation' && sourceIndex != null) {
+        move = Move.foundationToTableau(
+          foundationIndex: sourceIndex,
+          tableauIndex: i,
+          card: card,
+        );
+      }
+      if (move != null && _rules.isMoveLegal(move, state)) {
+        moves.add(move);
+      }
+    }
+
+    return moves;
+  }
+
+  /// Génère une description simple du coup pour l'affichage
+  String _getMoveDescription(Move move) {
+    switch (move.type) {
+      case MoveType.wasteToFoundation:
+      case MoveType.tableauToFoundation:
+        return 'Moved to foundation';
+      case MoveType.wasteToTableau:
+      case MoveType.tableauToTableau:
+      case MoveType.foundationToTableau:
+        return 'Moved to tableau';
+      default:
+        return 'Move completed';
+    }
+  }
+
   /// Tente un auto-move vers les fondations
   bool _tryAutoMoveToFoundations(Card card, String source, int? sourceIndex) {
     for (var i = 0; i < state.foundations.length; i++) {

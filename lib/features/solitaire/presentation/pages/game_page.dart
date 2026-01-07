@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:solitaire_klondike/generated/l10n.dart';
 import 'package:solitaire_klondike/core/theme/app_theme.dart';
+import 'package:solitaire_klondike/core/utils/responsive.dart';
+import 'package:solitaire_klondike/core/utils/settings_service.dart';
 import 'package:solitaire_klondike/features/solitaire/presentation/providers/providers.dart';
 import 'package:solitaire_klondike/features/solitaire/presentation/widgets/card_view.dart';
 import 'package:solitaire_klondike/features/solitaire/presentation/widgets/pile_widgets.dart'
@@ -74,16 +76,16 @@ class _GamePageState extends ConsumerState<GamePage> {
   Widget build(BuildContext context) {
     final gameState = ref.watch(gameControllerProvider);
     final gameController = ref.read(gameControllerProvider.notifier);
+    final settings = ref.watch(settingsProvider);
     final l10n = S.of(context)!;
     final media = MediaQuery.of(context);
+    final responsive = context.responsive;
 
+    // BoardLayout avec multiplicateur de taille pour l'accessibilité seniors
     final layout = BoardLayout(
       media.size,
       media.padding,
-      // Espacements plus généreux pour éviter les chevauchements
-      hGap: media.size.width < 600 ? 12 : 16, // Augmenté
-      vGap: media.size.width < 600 ? 16 : 20, // Augmenté
-      additionalPadding: media.size.width < 600 ? 12 : 20, // Augmenté
+      cardSizeMultiplier: settings.cardSizeMultiplier,
     );
 
     // Détecter si on doit lancer l'animation de distribution
@@ -97,59 +99,11 @@ class _GamePageState extends ConsumerState<GamePage> {
 
     return Scaffold(
       backgroundColor: context.gameColors.tableBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.8),
-        foregroundColor: Colors.white,
-        title: Text(l10n.appTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: () {
-              setState(() {
-                _showDebugOverlay = !_showDebugOverlay;
-              });
-            },
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'new_game':
-                  gameController.newGame();
-                case 'restart':
-                  gameController.newGame();
-                case 'hint':
-                  _showHint(gameController);
-                case 'toggle_draw_mode':
-                  gameController.toggleDrawMode();
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'new_game',
-                child: Text(l10n.newGame),
-              ),
-              PopupMenuItem(
-                value: 'restart',
-                child: Text(l10n.newGame),
-              ),
-              PopupMenuItem(
-                value: 'hint',
-                child: Text(l10n.hint),
-              ),
-              const PopupMenuItem(
-                value: 'toggle_draw_mode',
-                child: Text(
-                  r'Pioche: ${gameState.drawMode == DrawMode.one ? "1 carte" : "3 cartes"}',
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+      appBar: _buildResponsiveAppBar(context, gameState, gameController, l10n, responsive),
       body: SafeArea(
         child: Column(
           children: [
-            _buildHUD(context, gameState, l10n),
+            _buildHUD(context, gameState, settings, l10n, responsive),
             Expanded(
               child: Stack(
                 children: [
@@ -158,7 +112,7 @@ class _GamePageState extends ConsumerState<GamePage> {
                     layout,
                     gameState,
                     gameController,
-                    media.size.width < 600,
+                    responsive,
                   ),
                   // Cartes positionnées (au premier plan)
                   ..._buildPositionedCards(layout, gameState, gameController),
@@ -191,37 +145,178 @@ class _GamePageState extends ConsumerState<GamePage> {
     );
   }
 
-  Widget _buildHUD(BuildContext context, GameState gameState, S l10n) {
+  PreferredSizeWidget _buildResponsiveAppBar(
+    BuildContext context,
+    GameState gameState,
+    GameController gameController,
+    S l10n,
+    ResponsiveInfo responsive,
+  ) {
+    final toolbarHeight = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 40 : 48,
+      tablet: 56,
+      desktop: 64,
+    );
+
+    return AppBar(
+      backgroundColor: Colors.black.withOpacity(0.8),
+      foregroundColor: Colors.white,
+      toolbarHeight: toolbarHeight,
+      title: Text(
+        l10n.appTitle,
+        style: TextStyle(
+          fontSize: responsive.responsive<double>(
+            phone: responsive.isLandscape ? 16 : 18,
+            tablet: 20,
+            desktop: 22,
+          ),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.bug_report,
+            size: responsive.responsive<double>(
+              phone: 20,
+              tablet: 24,
+              desktop: 28,
+            ),
+          ),
+          onPressed: () {
+            setState(() {
+              _showDebugOverlay = !_showDebugOverlay;
+            });
+          },
+        ),
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'new_game':
+                gameController.newGame();
+              case 'restart':
+                gameController.newGame();
+              case 'hint':
+                _showHint(gameController);
+              case 'toggle_draw_mode':
+                gameController.toggleDrawMode();
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'new_game',
+              child: Text(l10n.newGame),
+            ),
+            PopupMenuItem(
+              value: 'restart',
+              child: Text(l10n.newGame),
+            ),
+            PopupMenuItem(
+              value: 'hint',
+              child: Text(l10n.hint),
+            ),
+            const PopupMenuItem(
+              value: 'toggle_draw_mode',
+              child: Text(
+                r'Pioche: ${gameState.drawMode == DrawMode.one ? "1 carte" : "3 cartes"}',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHUD(
+    BuildContext context,
+    GameState gameState,
+    AppSettings settings,
+    S l10n,
+    ResponsiveInfo responsive,
+  ) {
+    final padding = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 8 : 12,
+      tablet: 16,
+      desktop: 20,
+    );
+
+    final labelFontSize = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 10 : 11,
+      tablet: 12,
+      desktop: 14,
+    );
+
+    final valueFontSize = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 14 : 16,
+      tablet: 18,
+      desktop: 20,
+    );
+
+    // Construire les items du HUD selon les settings (Mode Sérénité)
+    final hudItems = <Widget>[];
+
+    if (settings.showScore) {
+      hudItems.add(
+        _buildHUDItem(
+          l10n.score,
+          gameState.score.toString(),
+          labelFontSize,
+          valueFontSize,
+        ),
+      );
+    }
+
+    // Toujours afficher les moves
+    hudItems.add(
+      _buildHUDItem(
+        l10n.moves,
+        gameState.moves.toString(),
+        labelFontSize,
+        valueFontSize,
+      ),
+    );
+
+    if (settings.showTimer) {
+      hudItems.add(
+        _buildHUDItem(
+          l10n.time,
+          _formatTime(gameState.time),
+          labelFontSize,
+          valueFontSize,
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
       color: Colors.black.withOpacity(0.1),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildHUDItem(l10n.score, gameState.score.toString()),
-          _buildHUDItem(l10n.moves, gameState.moves.toString()),
-          _buildHUDItem(l10n.time, _formatTime(gameState.time)),
-        ],
+        children: hudItems,
       ),
     );
   }
 
-  Widget _buildHUDItem(String label, String value) {
+  Widget _buildHUDItem(
+    String label,
+    String value,
+    double labelFontSize,
+    double valueFontSize,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white70,
-            fontSize: 12,
+            fontSize: labelFontSize,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: valueFontSize,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -233,8 +328,30 @@ class _GamePageState extends ConsumerState<GamePage> {
     BoardLayout layout,
     GameState gameState,
     GameController gameController,
-    bool isMobile,
+    ResponsiveInfo responsive,
   ) {
+    // Extensions adaptatives selon le type d'appareil
+    final extendSides = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 6 : 8,
+      tablet: 6,
+      desktop: 4,
+    );
+    final extendTop = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 6 : 8,
+      tablet: 6,
+      desktop: 4,
+    );
+    final extendBottomFoundation = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 18 : 25,
+      tablet: 20,
+      desktop: 15,
+    );
+    final extendBottomTableau = responsive.responsive<double>(
+      phone: responsive.isLandscape ? 12 : 15,
+      tablet: 12,
+      desktop: 10,
+    );
+
     return [
       // Stock pile placeholder
       Positioned.fromRect(
@@ -277,16 +394,12 @@ class _GamePageState extends ConsumerState<GamePage> {
       ...layout.foundationRects.asMap().entries.map((entry) {
         final index = entry.key;
         final rect = entry.value;
-        // Calcul adaptatif des extensions pour mobile/desktop (réduit car plus d'espacement)
-        final extendSides = isMobile ? 8 : 6;
-        final extendTop = isMobile ? 8 : 6;
-        final extendBottom = isMobile ? 25 : 20;
 
         return Positioned(
-          left: rect.left - extendSides, // Étendre à gauche
-          top: rect.top - extendTop, // Étendre vers le haut
-          width: rect.width + (extendSides * 2), // Étendre la largeur
-          height: rect.height + extendBottom, // Étendre vers le bas
+          left: rect.left - extendSides,
+          top: rect.top - extendTop,
+          width: rect.width + (extendSides * 2),
+          height: rect.height + extendBottomFoundation,
           child: pile_widgets.PileDropTarget(
             onAccept: (game.Card card) {
               print('[GamePage] Accepting card on foundation $index');
@@ -318,16 +431,11 @@ class _GamePageState extends ConsumerState<GamePage> {
         final totalHeight =
             rect.height + (pile.cards.length * layout.faceUpOffset) + 50;
 
-        // Extensions adaptatives pour les tableaux (réduit car plus d'espacement)
-        final extendSides = isMobile ? 8 : 6;
-        final extendTop = isMobile ? 8 : 6;
-        final extendBottom = isMobile ? 15 : 10;
-
         return Positioned(
-          left: rect.left - extendSides, // Étendre à gauche
-          top: rect.top - extendTop, // Étendre vers le haut
-          width: rect.width + (extendSides * 2), // Étendre la largeur
-          height: totalHeight + extendBottom, // Étendre encore plus vers le bas
+          left: rect.left - extendSides,
+          top: rect.top - extendTop,
+          width: rect.width + (extendSides * 2),
+          height: totalHeight + extendBottomTableau,
           child: pile_widgets.PileDropTarget(
             onAccept: (game.Card card) {
               print('[GamePage] Accepting card on tableau $index');
@@ -371,6 +479,9 @@ class _GamePageState extends ConsumerState<GamePage> {
       );
     }
 
+    // Récupérer le setting tapToMove
+    final settings = ref.read(settingsProvider);
+
     // Waste pile - cartes visibles en éventail
     for (var i = 0; i < gameState.waste.cards.length; i++) {
       final card = gameState.waste.cards[i];
@@ -385,7 +496,7 @@ class _GamePageState extends ConsumerState<GamePage> {
               gameState.waste.cards.length -
                   1, // Seule la dernière est draggable
           onTap: i == gameState.waste.cards.length - 1
-              ? () => gameController.tapCard(card, source: 'waste')
+              ? () => _handleCardTap(card, 'waste', null, gameController, settings.tapToMove)
               : null,
         ),
       );
@@ -431,11 +542,7 @@ class _GamePageState extends ConsumerState<GamePage> {
             key: ValueKey('tableau_${columnIndex}_${card.id}'),
             isDraggable: card.faceUp,
             onTap: card.faceUp
-                ? () => gameController.tapCard(
-                      card,
-                      source: 'tableau',
-                      sourceIndex: columnIndex,
-                    )
+                ? () => _handleCardTap(card, 'tableau', columnIndex, gameController, settings.tapToMove)
                 : null,
           ),
         );
@@ -443,6 +550,38 @@ class _GamePageState extends ConsumerState<GamePage> {
     }
 
     return cards;
+  }
+
+  /// Gère le tap sur une carte selon le mode (tap-to-move ou normal)
+  void _handleCardTap(
+    game.Card card,
+    String source,
+    int? sourceIndex,
+    GameController controller,
+    bool tapToMoveEnabled,
+  ) {
+    if (tapToMoveEnabled) {
+      // Mode tap-to-move : déplace uniquement si un seul coup valide
+      final (success, message) = controller.tapToMoveCard(
+        card,
+        source: source,
+        sourceIndex: sourceIndex,
+      );
+      if (success && message != null) {
+        // Feedback discret pour le senior
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            duration: const Duration(milliseconds: 800),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      // Mode normal : auto-move agressif
+      controller.tapCard(card, source: source, sourceIndex: sourceIndex);
+    }
   }
 
   Widget _buildCard(

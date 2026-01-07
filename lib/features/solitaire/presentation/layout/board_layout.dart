@@ -1,43 +1,101 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:solitaire_klondike/core/utils/responsive.dart';
 
 /// Moteur de layout unique pour positionner piles et cartes de façon responsive
 /// et déterministe avec animations fluides, offsets cohérents et ancrage correct.
+/// Supporte portrait et paysage sur tous les types d'appareils.
+/// Supporte un multiplicateur de taille pour l'accessibilité seniors.
 class BoardLayout {
   BoardLayout(
     this.screenSize,
     EdgeInsets safeArea, {
-    this.topBar = 72,
-    this.hGap = 12,
-    this.vGap = 14,
-    double additionalPadding = 16,
-  }) : padding = EdgeInsets.only(
-          left: safeArea.left + additionalPadding,
-          top: safeArea.top + topBar,
-          right: safeArea.right + additionalPadding,
-          bottom: safeArea.bottom + additionalPadding,
-        ) {
+    double? topBar,
+    double? hGap,
+    double? vGap,
+    double? additionalPadding,
+    this.cardSizeMultiplier = 1.0,
+  }) : _safeArea = safeArea {
+    _responsiveInfo = _createResponsiveInfo();
+    _topBar = topBar ?? ResponsiveSpacing.topBar(_responsiveInfo);
+    _hGap = hGap ?? ResponsiveSpacing.hGap(_responsiveInfo);
+    _vGap = vGap ?? ResponsiveSpacing.vGap(_responsiveInfo);
+    _additionalPadding =
+        additionalPadding ?? ResponsiveSpacing.padding(_responsiveInfo);
+
+    padding = EdgeInsets.only(
+      left: safeArea.left + _additionalPadding,
+      top: safeArea.top + _topBar,
+      right: safeArea.right + _additionalPadding,
+      bottom: safeArea.bottom + _additionalPadding,
+    );
+
     _calculateDimensions();
     _calculateRects();
   }
 
+  /// Crée des infos responsive basées sur la taille d'écran
+  ResponsiveInfo _createResponsiveInfo() {
+    final orientation = screenSize.width > screenSize.height
+        ? ScreenOrientation.landscape
+        : ScreenOrientation.portrait;
+
+    final shortestSide = screenSize.width < screenSize.height
+        ? screenSize.width
+        : screenSize.height;
+
+    DeviceType deviceType;
+    if (shortestSide < Breakpoints.sm) {
+      deviceType = DeviceType.phone;
+    } else if (shortestSide < Breakpoints.lg) {
+      deviceType = DeviceType.tablet;
+    } else {
+      deviceType = DeviceType.desktop;
+    }
+
+    return ResponsiveInfo(
+      screenSize: screenSize,
+      orientation: orientation,
+      deviceType: deviceType,
+      safeArea: _safeArea,
+      devicePixelRatio: 1.0,
+    );
+  }
+
+  final EdgeInsets _safeArea;
+  late final ResponsiveInfo _responsiveInfo;
+  late final double _topBar;
+  late final double _hGap;
+  late final double _vGap;
+  late final double _additionalPadding;
+
+  /// Multiplicateur pour la taille des cartes (accessibilité seniors)
+  /// 1.0 = normal, 1.2 = large, 1.4 = extra large
+  final double cardSizeMultiplier;
+
   /// Padding incluant SafeArea + marges
-  final EdgeInsets padding;
+  late final EdgeInsets padding;
 
   /// Ratio largeur/hauteur d'une carte standard (63/88)
   static const double cardAspect = 63 / 88; // ≈ 0.715
 
   /// Hauteur réservée pour la barre du haut (AppBar + HUD)
-  final double topBar;
+  double get topBar => _topBar;
 
   /// Espacement horizontal entre les éléments
-  final double hGap;
+  double get hGap => _hGap;
 
   /// Espacement vertical entre les éléments
-  final double vGap;
+  double get vGap => _vGap;
 
   /// Taille de l'écran disponible
   final Size screenSize;
+
+  /// Infos responsive
+  ResponsiveInfo get responsiveInfo => _responsiveInfo;
+
+  /// Est-ce en mode paysage?
+  bool get isLandscape => _responsiveInfo.isLandscape;
 
   /// Dimensions calculées de carte
   late final double cardWidth;
@@ -57,26 +115,62 @@ class BoardLayout {
     final availableHeight = screenSize.height - padding.vertical;
 
     // Estimation du nombre minimal de lignes nécessaires pour le tableau
-    // (cartes face down + au moins quelques cartes face up)
-    const minRows = 8.0;
+    // En paysage, on a moins de hauteur donc on réduit
+    final minRows = isLandscape ? 6.0 : 8.0;
 
     // Calcul de la largeur de carte optimale
     // Contrainte 1: 7 colonnes avec espacement
-    final maxWidthByColumns = (availableWidth - 6 * hGap) / 7;
+    final maxWidthByColumns = (availableWidth - 6 * _hGap) / 7;
 
     // Contrainte 2: hauteur disponible pour le tableau
-    final tableauHeight =
-        availableHeight - (2 * vGap); // Réserve pour les rangées du haut
+    final tableauHeight = availableHeight - (2 * _vGap);
     final maxWidthByHeight =
         (tableauHeight / (minRows * 0.27 + 1)) * cardAspect;
 
+    // Définir les limites min/max selon le type d'appareil
+    // Appliquer le multiplicateur d'accessibilité aux dimensions min/max
+    final baseMinCardWidth = _responsiveInfo.responsive<double>(
+      phone: _responsiveInfo.isSmallPhone ? 32 : 38,
+      tablet: 45,
+      desktop: 50,
+    );
+
+    final baseMaxCardWidth = _responsiveInfo.responsive<double>(
+      phone: isLandscape ? 55 : 70,
+      tablet: 85,
+      desktop: 100,
+    );
+
+    // Appliquer le multiplicateur d'accessibilité seniors
+    final minCardWidth = baseMinCardWidth * cardSizeMultiplier;
+    final maxCardWidth = baseMaxCardWidth * cardSizeMultiplier;
+
     // Prendre le minimum pour respecter les deux contraintes
-    cardWidth = math.min(maxWidthByColumns, maxWidthByHeight).clamp(40.0, 90.0);
+    cardWidth =
+        math.min(maxWidthByColumns, maxWidthByHeight).clamp(minCardWidth, maxCardWidth);
     cardHeight = cardWidth / cardAspect;
 
     // Calcul des offsets d'empilement (augmentés pour éviter les chevauchements)
-    faceUpOffset = (0.32 * cardHeight).clamp(20.0, 42.0);
-    faceDownOffset = (0.22 * cardHeight).clamp(14.0, 32.0);
+    // En paysage, réduire les offsets pour économiser de l'espace vertical
+    final faceUpMultiplier = isLandscape ? 0.26 : 0.32;
+    final faceDownMultiplier = isLandscape ? 0.18 : 0.22;
+
+    final minFaceUpOffset = _responsiveInfo.responsive<double>(
+      phone: isLandscape ? 14 : 18,
+      tablet: 22,
+      desktop: 26,
+    );
+
+    final maxFaceUpOffset = _responsiveInfo.responsive<double>(
+      phone: isLandscape ? 28 : 36,
+      tablet: 42,
+      desktop: 50,
+    );
+
+    faceUpOffset =
+        (faceUpMultiplier * cardHeight).clamp(minFaceUpOffset, maxFaceUpOffset);
+    faceDownOffset =
+        (faceDownMultiplier * cardHeight).clamp(minFaceUpOffset * 0.7, maxFaceUpOffset * 0.7);
   }
 
   void _calculateRects() {
@@ -89,7 +183,7 @@ class BoardLayout {
 
     // Waste: à droite du stock avec espacement
     wasteRect = Rect.fromLTWH(
-      stockRect.right + hGap,
+      stockRect.right + _hGap,
       baseY,
       cardWidth,
       cardHeight,
@@ -98,17 +192,17 @@ class BoardLayout {
     // Fondations: 4 cases alignées en haut-droite
     foundationRects = List.generate(4, (index) {
       final rightmostX = screenSize.width - padding.right - cardWidth;
-      final x = rightmostX - (3 - index) * (cardWidth + hGap);
+      final x = rightmostX - (3 - index) * (cardWidth + _hGap);
       return Rect.fromLTWH(x, baseY, cardWidth, cardHeight);
     });
 
     // Tableau: 7 colonnes sous la rangée du haut
-    final tableauY = baseY + cardHeight + vGap;
+    final tableauY = baseY + cardHeight + _vGap;
     final tableauWidth = screenSize.width - padding.horizontal;
-    final columnWidth = (tableauWidth - 6 * hGap) / 7;
+    final columnWidth = (tableauWidth - 6 * _hGap) / 7;
 
     tableauColumnRects = List.generate(7, (index) {
-      final x = baseX + index * (columnWidth + hGap);
+      final x = baseX + index * (columnWidth + _hGap);
       return Rect.fromLTWH(x, tableauY, columnWidth, cardHeight);
     });
   }
@@ -138,7 +232,8 @@ class BoardLayout {
   /// Position absolue d'une carte dans la waste (pour affichage en éventail)
   Offset cardOffsetInWaste(int stackIndex) {
     const maxVisible = 3;
-    const fanOffset = 24.0;
+    // Ajuster le fan offset selon la taille des cartes
+    final fanOffset = cardWidth * 0.35;
 
     if (stackIndex < maxVisible) {
       return Offset(
@@ -165,19 +260,26 @@ class BoardLayout {
     // Convertir en coordonnées locales
     final localPosition = globalPosition;
 
+    // Zone d'extension adaptative selon l'appareil
+    final dropExtension = _responsiveInfo.responsive<double>(
+      phone: 10,
+      tablet: 8,
+      desktop: 6,
+    );
+
     // Vérifier le stock
-    if (stockRect.contains(localPosition)) {
+    if (stockRect.inflate(dropExtension).contains(localPosition)) {
       return DropZone.stock;
     }
 
     // Vérifier la waste
-    if (wasteRect.contains(localPosition)) {
+    if (wasteRect.inflate(dropExtension).contains(localPosition)) {
       return DropZone.waste;
     }
 
     // Vérifier les fondations
     for (var i = 0; i < foundationRects.length; i++) {
-      if (foundationRects[i].contains(localPosition)) {
+      if (foundationRects[i].inflate(dropExtension).contains(localPosition)) {
         return DropZone.foundation(i);
       }
     }
@@ -185,7 +287,7 @@ class BoardLayout {
     // Vérifier les colonnes du tableau
     for (var i = 0; i < tableauColumnRects.length; i++) {
       // Étendre la zone de drop verticalement pour faciliter le drop
-      final extendedRect = tableauColumnRects[i].inflate(8);
+      final extendedRect = tableauColumnRects[i].inflate(dropExtension);
       if (extendedRect.contains(localPosition)) {
         return DropZone.tableau(i);
       }
