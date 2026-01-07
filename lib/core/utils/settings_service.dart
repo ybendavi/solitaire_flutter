@@ -25,6 +25,7 @@ class SettingsKeys {
   static const String plainBackground = 'plainBackground';
   static const String tapToMove = 'tapToMove';
   static const String showScore = 'showScore';
+  static const String serenityMode = 'serenityMode';
 }
 
 /// App settings model
@@ -37,12 +38,13 @@ class AppSettings {
     this.autoComplete = true,
     this.showTimer = true,
     this.leftHandedMode = false,
-    // Accessibilité seniors
-    this.cardSize = CardSize.normal,
+    // Accessibilité seniors - défauts optimisés pour seniors
+    this.cardSize = CardSize.extraLarge, // Plus gros par défaut
     this.highContrast = false,
     this.plainBackground = false,
-    this.tapToMove = false,
+    this.tapToMove = true, // Activé par défaut pour seniors
     this.showScore = true,
+    this.serenityMode = false,
   });
 
   final ThemeMode themeMode;
@@ -58,6 +60,7 @@ class AppSettings {
   final bool plainBackground;
   final bool tapToMove;
   final bool showScore;
+  final bool serenityMode; // Mode sérénité global
 
   /// Facteur de mise à l'échelle des cartes selon cardSize
   double get cardSizeMultiplier {
@@ -84,6 +87,7 @@ class AppSettings {
     bool? plainBackground,
     bool? tapToMove,
     bool? showScore,
+    bool? serenityMode,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -98,6 +102,7 @@ class AppSettings {
       plainBackground: plainBackground ?? this.plainBackground,
       tapToMove: tapToMove ?? this.tapToMove,
       showScore: showScore ?? this.showScore,
+      serenityMode: serenityMode ?? this.serenityMode,
     );
   }
 }
@@ -123,7 +128,8 @@ class SettingsService {
     final themeModeIndex = _box!.get(SettingsKeys.themeMode, defaultValue: 0) as int;
     final themeMode = ThemeMode.values[themeModeIndex.clamp(0, 2)];
 
-    final cardSizeIndex = _box!.get(SettingsKeys.cardSize, defaultValue: 0) as int;
+    // Default: extraLarge (index 2) pour seniors
+    final cardSizeIndex = _box!.get(SettingsKeys.cardSize, defaultValue: 2) as int;
     final cardSize = CardSize.values[cardSizeIndex.clamp(0, CardSize.values.length - 1)];
 
     return AppSettings(
@@ -134,12 +140,13 @@ class SettingsService {
       autoComplete: _box!.get(SettingsKeys.autoComplete, defaultValue: true) as bool,
       showTimer: _box!.get(SettingsKeys.showTimer, defaultValue: true) as bool,
       leftHandedMode: _box!.get(SettingsKeys.leftHandedMode, defaultValue: false) as bool,
-      // Accessibilité seniors
+      // Accessibilité seniors - defaults optimisés
       cardSize: cardSize,
       highContrast: _box!.get(SettingsKeys.highContrast, defaultValue: false) as bool,
       plainBackground: _box!.get(SettingsKeys.plainBackground, defaultValue: false) as bool,
-      tapToMove: _box!.get(SettingsKeys.tapToMove, defaultValue: false) as bool,
+      tapToMove: _box!.get(SettingsKeys.tapToMove, defaultValue: true) as bool,
       showScore: _box!.get(SettingsKeys.showScore, defaultValue: true) as bool,
+      serenityMode: _box!.get(SettingsKeys.serenityMode, defaultValue: false) as bool,
     );
   }
 
@@ -246,6 +253,39 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   void setShowScore(bool enabled) {
     state = state.copyWith(showScore: enabled);
     _service.saveSetting(SettingsKeys.showScore, enabled);
+  }
+
+  void setSerenityMode(bool enabled) {
+    state = state.copyWith(serenityMode: enabled);
+    _service.saveSetting(SettingsKeys.serenityMode, enabled);
+  }
+
+  /// Active le mode sérénité avec tous les settings associés
+  void enableSerenityMode() {
+    state = state.copyWith(
+      serenityMode: true,
+      showScore: false,
+      showTimer: false,
+      soundEnabled: false, // Sons désactivés pour le calme
+    );
+    _service.saveSetting(SettingsKeys.serenityMode, true);
+    _service.saveSetting(SettingsKeys.showScore, false);
+    _service.saveSetting(SettingsKeys.showTimer, false);
+    _service.saveSetting(SettingsKeys.soundEnabled, false);
+  }
+
+  /// Désactive le mode sérénité et restaure les settings par défaut
+  void disableSerenityMode() {
+    state = state.copyWith(
+      serenityMode: false,
+      showScore: true,
+      showTimer: true,
+      soundEnabled: true,
+    );
+    _service.saveSetting(SettingsKeys.serenityMode, false);
+    _service.saveSetting(SettingsKeys.showScore, true);
+    _service.saveSetting(SettingsKeys.showTimer, true);
+    _service.saveSetting(SettingsKeys.soundEnabled, true);
   }
 }
 

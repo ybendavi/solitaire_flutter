@@ -11,18 +11,26 @@ Ameliorer l'application pour une cible senior avec des features de confort, acce
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Slider taille des cartes | OK | Normal / Large (+20%) / Extra Large (+40%) |
+| Slider taille des cartes | OK | Normal / Large (+20%) / Extra Large (+40%) - **Default: XL** |
 | Mode contraste eleve | OK (setting) | Toggle pret, theme a implementer |
 | Fond uni | OK (setting) | Toggle pret, theme a implementer |
-| Tap-to-move | OK | Deplacement auto si UN seul coup valide |
-| Mode Serenite | OK | Toggle Score + Timer independants |
+| Tap-to-move | OK | Deplacement auto si UN seul coup valide - **Default: ON** |
+| Mode Serenite | OK | Bouton dedique dans le menu + theme distinct |
 
 ### Fichiers modifies
-- `lib/core/utils/settings_service.dart` - Nouveaux settings (cardSize, highContrast, plainBackground, tapToMove, showScore)
+- `lib/core/utils/settings_service.dart` - Settings: cardSize, serenityMode, tapToMove, etc.
+- `lib/core/theme/app_theme.dart` - Palette GameColors.serenity (bleu-gris apaisant)
 - `lib/features/solitaire/presentation/layout/board_layout.dart` - Support cardSizeMultiplier
+- `lib/features/solitaire/presentation/pages/home_page.dart` - Bouton "Serenity" dans le menu
 - `lib/features/solitaire/presentation/pages/settings_page.dart` - UI pour les nouveaux settings
-- `lib/features/solitaire/presentation/pages/game_page.dart` - Integration tap-to-move et showScore/showTimer
+- `lib/features/solitaire/presentation/pages/game_page.dart` - Theme Serenity + tap-to-move
 - `lib/features/solitaire/presentation/providers/game_controller.dart` - Methode tapToMoveCard()
+
+### Mode Serenite
+- **Bouton dedié** dans le menu principal (icone spa, couleur bleu-gris)
+- **Active automatiquement**: masque score, masque timer, desactive sons
+- **Theme distinct**: fond bleu-gris doux (#8FB3B8), couleurs adoucies
+- **Desactive** quand on lance une partie normale via "New Game"
 
 ### A tester
 - [ ] Build reussi

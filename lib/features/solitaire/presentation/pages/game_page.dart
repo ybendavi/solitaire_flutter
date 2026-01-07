@@ -97,8 +97,13 @@ class _GamePageState extends ConsumerState<GamePage> {
     }
     _previousGameStatus = gameState.status;
 
+    // Utiliser les couleurs Serenity si le mode est activé
+    final gameColors = settings.serenityMode
+        ? GameColors.serenity
+        : context.gameColors;
+
     return Scaffold(
-      backgroundColor: context.gameColors.tableBackground,
+      backgroundColor: gameColors.tableBackground,
       appBar: _buildResponsiveAppBar(context, gameState, gameController, l10n, responsive),
       body: SafeArea(
         child: Column(

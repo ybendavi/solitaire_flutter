@@ -217,6 +217,21 @@ class GameColors extends ThemeExtension<GameColors> {
     wasteBackground: Color(0xFF4CAF50), // Vert moyen pour la défausse
   );
 
+  /// Mode Sérénité - Couleurs douces et apaisantes pour une expérience calme
+  static const GameColors serenity = GameColors(
+    tableBackground: Color(0xFF8FB3B8), // Bleu-gris doux et apaisant
+    cardBackground: Color(0xFFFFFBF5), // Blanc cassé chaud
+    cardBorder: Color(0xFFB8A88A), // Beige doux
+    redSuit: Color(0xFFC17B7B), // Rouge adouci, moins agressif
+    blackSuit: Color(0xFF5C5C5C), // Gris doux au lieu de noir pur
+    foundationBackground: Color(0xFF7A9E9F), // Bleu-vert doux
+    emptyPileBackground: Color(0xFFA8C5C7), // Bleu-gris clair
+    selectedCardBorder: Color(0xFFD4A574), // Doré doux
+    hintHighlight: Color(0xFFE8D5B7), // Beige clair pour les indices
+    stockBackground: Color(0xFF9BB8BA), // Bleu-gris moyen
+    wasteBackground: Color(0xFFB5CDCF), // Bleu-gris très clair
+  );
+
   @override
   GameColors copyWith({
     Color? tableBackground,
